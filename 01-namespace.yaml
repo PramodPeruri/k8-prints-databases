@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prints
+  labels:
+     environment: development
+     project: prints
+     
