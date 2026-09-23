@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: prints
+spec:
+  selector:
+    project: prints
+    component: redis
+    tier: db
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+  namespace: prints
+spec:
+  clusterIP: None
+  selector:
+    project: prints
+    component: redis
+    tier: db
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: prints
+spec:
+  selector:
+    matchLabels:
+      project: prints
+      component: redis
+      tier: db # has to match .spec.template.metadata.labels
+  serviceName: "redis-headless" # this should be head less service name
+  replicas: 2 # by default is 1
+  template:
+    metadata:
+      labels:
+        project: prints
+        component: redis
+        ier: db # has to match .spec.selector.matchLabels
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.0
+        volumeMounts:
+        - name: redis
+          mountPath: /data
+  # This is PVC
+  volumeClaimTemplates:
+  - metadata:
+      name: redis
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "prints-ebs"
+      resources:
+        requests:
+          storage: 1Gi
